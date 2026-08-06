@@ -1,105 +1,375 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php
+session_start();
+include("../database/db.php");
 
-<head>
+include("../includes/header.php");
+include("../includes/navbar.php");
+?>
 
-    <meta charset="UTF-8">
+<!-- ================= HERO SECTION ================= -->
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<section class="hero-section">
 
-    <title>Bakes & Cakes</title>
+    <div class="container">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <div class="row align-items-center">
 
-</head>
+            <div class="col-lg-6">
 
-<body>
+                <span class="hero-tag">
 
-    <!-- Navbar -->
+                    Freshly Baked Every Day
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                </span>
 
-        <div class="container">
+                <h1 class="hero-title">
 
-            <a class="navbar-brand fw-bold" href="#">
-                🧁 Bakes & Cakes
-            </a>
+                    Delicious Cakes <br>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar">
+                    Made With Love ❤️
 
-                <span class="navbar-toggler-icon"></span>
+                </h1>
 
-            </button>
+                <p class="hero-text">
 
-            <div class="collapse navbar-collapse" id="navbar">
+                    Celebrate every occasion with our freshly baked cakes,
+                    pastries, cookies and desserts prepared using premium
+                    ingredients.
 
-                <ul class="navbar-nav ms-auto">
+                </p>
 
-                    <li class="nav-item">
-                        <a class="nav-link active" href="home.php">Home</a>
-                    </li>
+                <a href="shop.php" class="btn btn-dark btn-lg me-3">
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="shop.php">Shop</a>
-                    </li>
+                    Shop Now
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="login.php">Login</a>
-                    </li>
+                </a>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="register.php">Register</a>
-                    </li>
+                <a href="about.php" class="btn btn-outline-dark btn-lg">
 
-                </ul>
+                    Learn More
+
+                </a>
+
+            </div>
+
+            <div class="col-lg-6 text-center">
+
+                <img src="../assets/images/hero-cake.jpg" class="hero-img img-fluid" alt="Hero Cake">
 
             </div>
 
         </div>
 
-    </nav>
+    </div>
 
-    <!-- Hero Section -->
+</section>
 
-    <div class="container mt-5">
+<!-- ================= FEATURED PRODUCTS ================= -->
 
-        <div class="text-center">
+<section class="products-section py-5">
 
-            <h1 class="display-4 fw-bold">
-                Freshly Baked Every Day
-            </h1>
+    <div class="container">
 
-            <p class="lead">
-                Delicious cakes, pastries and cookies made with love.
+        <div class="text-center mb-5">
+
+            <h2 class="fw-bold">
+
+                Featured Products
+
+            </h2>
+
+            <p class="text-muted">
+
+                Freshly baked and loved by our customers.
+
             </p>
 
-            <a href="shop.php" class="btn btn-primary btn-lg">
-                Shop Now
-            </a>
+        </div>
+
+        <div class="row">
+
+            <?php
+
+            $query = "SELECT *
+          FROM products
+          WHERE status='Available'
+          ORDER BY created_at DESC
+          LIMIT 4";
+
+            $result = mysqli_query($conn, $query);
+
+            while ($row = mysqli_fetch_assoc($result)) {
+
+                ?>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+
+                    <div class="card product-card h-100">
+
+                        <img src="../uploads/<?php echo $row['image']; ?>" class="card-img-top"
+                            alt="<?php echo $row['name']; ?>">
+
+                        <div class="card-body d-flex flex-column">
+
+                            <h5 class="card-title">
+
+                                <?php echo $row['name']; ?>
+
+                            </h5>
+
+                            <p class="text-muted small">
+
+                                <?php echo substr($row['description'], 0, 70); ?>...
+
+                            </p>
+
+                            <h4 class="text-danger">
+
+                                ₹<?php echo number_format($row['price'], 2); ?>
+
+                            </h4>
+
+                            <a href="product-details.php?id=<?php echo $row['id']; ?>" class="btn btn-dark mt-auto">
+
+                                View Details
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            <?php } ?>
 
         </div>
 
     </div>
 
-    <!-- Featured Products -->
+</section>
 
-    <div class="container mt-5">
+<!-- ================= CATEGORIES ================= -->
 
-        <h2 class="text-center mb-4">
-            Featured Products
-        </h2>
+<section class="py-5 bg-light">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <h2 class="fw-bold">
+
+                Explore Categories
+
+            </h2>
+
+        </div>
+
+        <div class="row text-center">
+
+            <?php
+
+            $category_query = "SELECT * FROM categories ORDER BY category_name";
+
+            $category_result = mysqli_query($conn, $category_query);
+
+            while ($category = mysqli_fetch_assoc($category_result)) {
+
+                ?>
+
+                <div class="col-md-3 mb-4">
+
+                    <div class="feature-box">
+
+                        <h1>
+
+                            🎂
+
+                        </h1>
+
+                        <h4>
+
+                            <?php echo $category['category_name']; ?>
+
+                        </h4>
+
+                    </div>
+
+                </div>
+
+            <?php } ?>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ================= WHY CHOOSE US ================= -->
+
+<section class="why-section py-5">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <h2 class="fw-bold">
+
+                Why Choose Us
+
+            </h2>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-3 mb-4">
+
+                <div class="feature-box text-center">
+
+                    <div class="feature-icon">
+
+                        🍰
+
+                    </div>
+
+                    <h4>
+
+                        Fresh Cakes
+
+                    </h4>
+
+                    <p>
+
+                        Freshly baked every morning.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-3 mb-4">
+
+                <div class="feature-box text-center">
+
+                    <div class="feature-icon">
+
+                        🚚
+
+                    </div>
+
+                    <h4>
+
+                        Fast Delivery
+
+                    </h4>
+
+                    <p>
+
+                        Quick doorstep delivery.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-3 mb-4">
+
+                <div class="feature-box text-center">
+
+                    <div class="feature-icon">
+
+                        ❤️
+
+                    </div>
+
+                    <h4>
+
+                        Premium Quality
+
+                    </h4>
+
+                    <p>
+
+                        Finest ingredients only.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-3 mb-4">
+
+                <div class="feature-box text-center">
+
+                    <div class="feature-icon">
+
+                        ⭐
+
+                    </div>
+
+                    <h4>
+
+                        Customer Satisfaction
+
+                    </h4>
+
+                    <p>
+
+                        Thousands of happy customers.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ================= TESTIMONIALS ================= -->
+
+<section class="py-5">
+
+    <div class="container">
+
+        <div class="text-center mb-5">
+
+            <h2 class="fw-bold">
+
+                What Our Customers Say
+
+            </h2>
+
+        </div>
 
         <div class="row">
 
             <div class="col-md-4">
 
-                <div class="card shadow">
+                <div class="card shadow border-0 h-100">
 
                     <div class="card-body text-center">
 
-                        <h4>🍰 Chocolate Cake</h4>
+                        <h2>⭐⭐⭐⭐⭐</h2>
 
-                        <p>Rich chocolate flavour</p>
+                        <p>
+
+                            The cakes are always fresh and delicious!
+
+                        </p>
+
+                        <strong>
+
+                            — Rahul
+
+                        </strong>
 
                     </div>
 
@@ -109,13 +379,23 @@
 
             <div class="col-md-4">
 
-                <div class="card shadow">
+                <div class="card shadow border-0 h-100">
 
                     <div class="card-body text-center">
 
-                        <h4>🍪 Cookies</h4>
+                        <h2>⭐⭐⭐⭐⭐</h2>
 
-                        <p>Freshly baked cookies</p>
+                        <p>
+
+                            Beautiful cakes and excellent service.
+
+                        </p>
+
+                        <strong>
+
+                            — Sneha
+
+                        </strong>
 
                     </div>
 
@@ -125,13 +405,23 @@
 
             <div class="col-md-4">
 
-                <div class="card shadow">
+                <div class="card shadow border-0 h-100">
 
                     <div class="card-body text-center">
 
-                        <h4>🥐 Butter Croissant</h4>
+                        <h2>⭐⭐⭐⭐⭐</h2>
 
-                        <p>Soft and crispy</p>
+                        <p>
+
+                            Highly recommended bakery in the city.
+
+                        </p>
+
+                        <strong>
+
+                            — Amit
+
+                        </strong>
 
                     </div>
 
@@ -143,16 +433,34 @@
 
     </div>
 
-    <!-- Footer -->
+</section>
 
-    <footer class="bg-dark text-white text-center p-3 mt-5">
+<!-- ================= CALL TO ACTION ================= -->
 
-        © 2026 Bakes & Cakes. All Rights Reserved.
+<section class="py-5 text-center bg-dark text-white">
 
-    </footer>
+    <div class="container">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <h2>
 
-</body>
+            Ready To Order Your Favourite Cake?
 
-</html>
+        </h2>
+
+        <p>
+
+            Fresh • Delicious • Made With Love
+
+        </p>
+
+        <a href="shop.php" class="btn btn-warning btn-lg">
+
+            Order Now
+
+        </a>
+
+    </div>
+
+</section>
+
+<?php include("../includes/footer.php"); ?>
