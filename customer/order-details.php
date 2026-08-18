@@ -1,169 +1,473 @@
 <?php
+
 session_start();
+
 include("../database/db.php");
 
+/*
+|--------------------------------------------------------------------------
+| Customer Login Check
+|--------------------------------------------------------------------------
+*/
+
 if (!isset($_SESSION['customer_id'])) {
+
     header("Location: login.php");
     exit();
+
 }
 
-if (!isset($_GET['id'])) {
+/*
+|--------------------------------------------------------------------------
+| Check Order ID
+|--------------------------------------------------------------------------
+*/
+
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+
     header("Location: my-orders.php");
     exit();
+
 }
 
 $order_id = (int) $_GET['id'];
-$customer_id = $_SESSION['customer_id'];
+$customer_id = (int) $_SESSION['customer_id'];
 
-// Get Order
-$order_query = "SELECT * FROM orders
-                WHERE id='$order_id'
-                AND customer_id='$customer_id'";
+/*
+|--------------------------------------------------------------------------
+| Get Order
+| Only allow the logged-in customer to view their own order
+|--------------------------------------------------------------------------
+*/
 
-$order_result = mysqli_query($conn, $order_query);
+$stmt = mysqli_prepare(
+    $conn,
+    "SELECT *
+     FROM orders
+     WHERE id = ?
+     AND customer_id = ?"
+);
 
-if (mysqli_num_rows($order_result) == 0) {
+mysqli_stmt_bind_param(
+    $stmt,
+    "ii",
+    $order_id,
+    $customer_id
+);
+
+mysqli_stmt_execute($stmt);
+
+$order_result = mysqli_stmt_get_result($stmt);
+
+/*
+|--------------------------------------------------------------------------
+| Order Not Found
+|--------------------------------------------------------------------------
+*/
+
+if (!$order_result || mysqli_num_rows($order_result) === 0) {
+
     header("Location: my-orders.php");
     exit();
+
 }
+
+/*
+|--------------------------------------------------------------------------
+| Fetch Order
+|--------------------------------------------------------------------------
+*/
 
 $order = mysqli_fetch_assoc($order_result);
 
+mysqli_stmt_close($stmt);
+
+/*
+|--------------------------------------------------------------------------
+| Load Header & Navbar
+|--------------------------------------------------------------------------
+*/
+
 include("../includes/header.php");
 include("../includes/navbar.php");
+
 ?>
 
 <div class="container py-5">
 
-    <div class="card shadow">
+    <!-- Page Breadcrumb -->
 
-        <div class="card-header bg-dark text-white">
+    <nav aria-label="breadcrumb" class="mb-4">
 
-            <h3>
+        <ol class="breadcrumb">
 
-                Order #<?php echo $order['id']; ?>
+            <li class="breadcrumb-item">
 
-            </h3>
+                <a href="home.php">
+                    Home
+                </a>
+
+            </li>
+
+            <li class="breadcrumb-item">
+
+                <a href="my-orders.php">
+                    My Orders
+                </a>
+
+            </li>
+
+            <li class="breadcrumb-item active" aria-current="page">
+
+                Order #<?php echo htmlspecialchars($order['id']); ?>
+
+            </li>
+
+        </ol>
+
+    </nav>
+
+
+    <!-- Order Details Card -->
+
+    <div class="card shadow border-0 rounded-4">
+
+        <!-- Header -->
+
+        <div class="card-header bg-dark text-white rounded-top-4">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <h3 class="mb-0">
+
+                    🧾 Order #<?php echo htmlspecialchars($order['id']); ?>
+
+                </h3>
+
+                <span class="badge bg-success">
+
+                    <?php echo htmlspecialchars($order['status']); ?>
+
+                </span>
+
+            </div>
 
         </div>
 
-        <div class="card-body">
+
+        <!-- Body -->
+
+        <div class="card-body p-4">
+
+
+            <!-- Order Summary -->
 
             <div class="row mb-4">
 
-                <div class="col-md-4">
+                <!-- Date -->
 
-                    <strong>Date :</strong><br>
+                <div class="col-md-4 mb-3">
 
-                    <?php echo date("d M Y", strtotime($order['order_date'])); ?>
+                    <div class="border rounded-3 p-3 h-100">
+
+                        <small class="text-muted">
+                            Order Date
+                        </small>
+
+                        <h5 class="mt-2 mb-0">
+
+                            <?php
+
+                            echo date(
+                                "d M Y",
+                                strtotime($order['order_date'])
+                            );
+
+                            ?>
+
+                        </h5>
+
+                    </div>
 
                 </div>
 
-                <div class="col-md-4">
 
-                    <strong>Status :</strong><br>
+                <!-- Status -->
 
-                    <?php echo $order['status']; ?>
+                <div class="col-md-4 mb-3">
+
+                    <div class="border rounded-3 p-3 h-100">
+
+                        <small class="text-muted">
+                            Order Status
+                        </small>
+
+                        <h5 class="mt-2 mb-0 text-success">
+
+                            <?php echo htmlspecialchars($order['status']); ?>
+
+                        </h5>
+
+                    </div>
 
                 </div>
 
-                <div class="col-md-4">
 
-                    <strong>Total :</strong><br>
+                <!-- Total -->
 
-                    ₹<?php echo number_format($order['total_amount'], 2); ?>
+                <div class="col-md-4 mb-3">
+
+                    <div class="border rounded-3 p-3 h-100">
+
+                        <small class="text-muted">
+                            Total Amount
+                        </small>
+
+                        <h5 class="mt-2 mb-0 text-danger">
+
+                            ₹<?php
+
+                            echo number_format(
+                                $order['total_amount'],
+                                2
+                            );
+
+                            ?>
+
+                        </h5>
+
+                    </div>
 
                 </div>
 
             </div>
 
-            <table class="table table-bordered text-center align-middle">
 
-                <thead class="table-dark">
+            <!-- Products Heading -->
 
-                    <tr>
+            <h4 class="mb-3">
 
-                        <th>Image</th>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
+                🛒 Ordered Products
 
-                    </tr>
+            </h4>
 
-                </thead>
 
-                <tbody>
+            <!-- Order Items Table -->
 
-                    <?php
+            <div class="table-responsive">
 
-                    $query = "SELECT
-            order_items.*,
-            products.name,
-            products.image
-          FROM order_items
-          INNER JOIN products
-          ON order_items.product_id = products.id
-          WHERE order_items.order_id='$order_id'";
+                <table class="table table-bordered text-center align-middle">
 
-                    $result = mysqli_query($conn, $query);
-
-                    while ($item = mysqli_fetch_assoc($result)) {
-
-                        $total = $item['price'] * $item['quantity'];
-
-                        ?>
+                    <thead class="table-dark">
 
                         <tr>
 
-                            <td>
+                            <th>
+                                Image
+                            </th>
 
-                                <img src="../uploads/<?php echo $item['image']; ?>" width="80">
+                            <th>
+                                Product
+                            </th>
 
-                            </td>
+                            <th>
+                                Price
+                            </th>
 
-                            <td>
+                            <th>
+                                Quantity
+                            </th>
 
-                                <?php echo $item['name']; ?>
-
-                            </td>
-
-                            <td>
-
-                                ₹<?php echo number_format($item['price'], 2); ?>
-
-                            </td>
-
-                            <td>
-
-                                <?php echo $item['quantity']; ?>
-
-                            </td>
-
-                            <td>
-
-                                ₹<?php echo number_format($total, 2); ?>
-
-                            </td>
+                            <th>
+                                Total
+                            </th>
 
                         </tr>
 
-                    <?php } ?>
+                    </thead>
 
-                </tbody>
 
-            </table>
+                    <tbody>
 
-            <a href="my-orders.php" class="btn btn-secondary">
+                        <?php
 
-                ← Back To My Orders
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Get Order Items
+                        |--------------------------------------------------------------------------
+                        */
 
-            </a>
+                        $item_stmt = mysqli_prepare(
+                            $conn,
+                            "SELECT
+                                order_items.*,
+                                products.name,
+                                products.image
+                             FROM order_items
+                             INNER JOIN products
+                             ON order_items.product_id = products.id
+                             WHERE order_items.order_id = ?"
+                        );
+
+                        mysqli_stmt_bind_param(
+                            $item_stmt,
+                            "i",
+                            $order_id
+                        );
+
+                        mysqli_stmt_execute($item_stmt);
+
+                        $items_result = mysqli_stmt_get_result($item_stmt);
+
+
+                        if ($items_result && mysqli_num_rows($items_result) > 0) {
+
+                            while ($item = mysqli_fetch_assoc($items_result)) {
+
+                                $item_total =
+                                    $item['price'] *
+                                    $item['quantity'];
+
+                                ?>
+
+                                <tr>
+
+                                    <!-- Product Image -->
+
+                                    <td>
+
+                                        <img src="../uploads/<?php echo htmlspecialchars($item['image']); ?>"
+                                            alt="<?php echo htmlspecialchars($item['name']); ?>" width="80" height="80"
+                                            class="rounded" style="object-fit: cover;">
+
+                                    </td>
+
+
+                                    <!-- Product Name -->
+
+                                    <td>
+
+                                        <strong>
+
+                                            <?php
+
+                                            echo htmlspecialchars(
+                                                $item['name']
+                                            );
+
+                                            ?>
+
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- Price -->
+
+                                    <td>
+
+                                        ₹<?php
+
+                                        echo number_format(
+                                            $item['price'],
+                                            2
+                                        );
+
+                                        ?>
+
+                                    </td>
+
+
+                                    <!-- Quantity -->
+
+                                    <td>
+
+                                        <?php
+
+                                        echo (int) $item['quantity'];
+
+                                        ?>
+
+                                    </td>
+
+
+                                    <!-- Item Total -->
+
+                                    <td>
+
+                                        <strong>
+
+                                            ₹<?php
+
+                                            echo number_format(
+                                                $item_total,
+                                                2
+                                            );
+
+                                            ?>
+
+                                        </strong>
+
+                                    </td>
+
+                                </tr>
+
+                                <?php
+
+                            }
+
+                        } else {
+
+                            ?>
+
+                            <tr>
+
+                                <td colspan="5" class="text-muted py-4">
+
+                                    No products found for this order.
+
+                                </td>
+
+                            </tr>
+
+                            <?php
+
+                        }
+
+                        mysqli_stmt_close($item_stmt);
+
+                        ?>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- Bottom Actions -->
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+
+                <a href="my-orders.php" class="btn btn-secondary rounded-pill px-4">
+
+                    ← Back To My Orders
+
+                </a>
+
+                <a href="shop.php" class="btn btn-success rounded-pill px-4">
+
+                    🛒 Continue Shopping
+
+                </a>
+
+            </div>
 
         </div>
 
     </div>
 
 </div>
+
 
 <?php include("../includes/footer.php"); ?>

@@ -2,8 +2,7 @@
 
 session_start();
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+
 
 include("../database/db.php");
 
@@ -23,19 +22,36 @@ $customer_id = (int) $_SESSION['customer_id'];
 
 
 // =====================================================
-// FETCH CUSTOMER
+// FETCH CUSTOMER SECURELY
 // =====================================================
 
-$query = "
-    SELECT *
-    FROM customers
-    WHERE id = '$customer_id'
-    LIMIT 1
-";
+$stmt = mysqli_prepare(
+    $conn,
+    "SELECT id, name, email, phone, address
+     FROM customers
+     WHERE id = ?
+     LIMIT 1"
+);
 
-$result = mysqli_query($conn, $query);
+if (!$stmt) {
 
-if (!$result || mysqli_num_rows($result) == 0) {
+    die("Database error. Please try again.");
+
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "i",
+    $customer_id
+);
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+if (!$result || mysqli_num_rows($result) === 0) {
+
+    mysqli_stmt_close($stmt);
 
     session_destroy();
 
@@ -45,6 +61,8 @@ if (!$result || mysqli_num_rows($result) == 0) {
 }
 
 $customer = mysqli_fetch_assoc($result);
+
+mysqli_stmt_close($stmt);
 
 
 // =====================================================
