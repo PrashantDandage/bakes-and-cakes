@@ -62,6 +62,12 @@ if (session_status() == PHP_SESSION_NONE) {
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="profile.php">
+                            <i class="bi bi-person-circle"></i> Profile
+                        </a>
+                    </li>
+
                     <li class="nav-item ms-3">
 
                         <span class="fw-bold">
